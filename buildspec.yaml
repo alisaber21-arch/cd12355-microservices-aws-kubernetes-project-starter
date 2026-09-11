@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - export ECR_REGISTRY="${ECR_REPOSITORY_URI%%/*}"
+      - export IMAGE_TAG="${IMAGE_VERSION_MAJOR:-1}.${IMAGE_VERSION_MINOR:-0}.${CODEBUILD_BUILD_NUMBER}"
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+  build:
+    commands:
+      - docker build --tag "$ECR_REPOSITORY_URI:$IMAGE_TAG" --file analytics/Dockerfile analytics
+  post_build:
+    commands:
+      - docker push "$ECR_REPOSITORY_URI:$IMAGE_TAG"
+      - printf '{"imageUri":"%s"}\n' "$ECR_REPOSITORY_URI:$IMAGE_TAG" > imageDetail.json
+
+artifacts:
+  files:
+    - imageDetail.json
