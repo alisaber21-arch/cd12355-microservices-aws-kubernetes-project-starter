@@ -5,6 +5,12 @@ The Coworking Space Service is a set of APIs that enables users to request one-t
 
 The completed Udacity Image Filter Node.js project is available in [`image-filter/`](image-filter/), including local run instructions and Elastic Beanstalk deployment steps. The repository root is also the deployment entrypoint: run `npm ci` followed by `npm start` from the root for localhost or Elastic Beanstalk. The root start script launches `image-filter/server.js`; the Coworking Space Python/Kubernetes project remains in its existing directories.
 
+The verified reviewer test endpoint is:
+
+```text
+http://image-filter-env.eba-yy83tzhg.us-east-1.elasticbeanstalk.com/filteredimage?image_url=https://upload.wikimedia.org/wikipedia/commons/b/bd/Golden_tabby_and_white_kitten_n01.jpg
+```
+
 For this project, you are a DevOps engineer who will be collaborating with a team that is building an API for business analysts. The API provides business analysts basic analytics data on user activity in the service. The application they provide you functions as expected locally and you are expected to help build a pipeline to deploy it in Kubernetes.
 
 ## Getting Started

@@ -61,10 +61,10 @@ eb create image-filter-env
 eb deploy
 ```
 
-The verified deployment runs in the `image-filter-env` environment in `us-east-1`. Its endpoint is:
+The verified deployment runs in the `image-filter-env` environment in `us-east-1`. The verified reviewer test endpoint is:
 
 ```text
-http://image-filter-env.eba-yy83tzhg.us-east-1.elasticbeanstalk.com/filteredimage?image_url=<url-encoded-public-image-url>
+http://image-filter-env.eba-yy83tzhg.us-east-1.elasticbeanstalk.com/filteredimage?image_url=https://upload.wikimedia.org/wikipedia/commons/b/bd/Golden_tabby_and_white_kitten_n01.jpg
 ```
 
 Elastic Beanstalk supplies `PORT`; `server.js` uses it automatically.
