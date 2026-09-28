@@ -46,19 +46,20 @@ The endpoint returns:
 
 ## Deploying to Elastic Beanstalk
 
-Install the [AWS EB CLI](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html), configure AWS credentials with permission to create Elastic Beanstalk resources, then run these commands from the repository root. Elastic Beanstalk detects the root `package.json` and runs its `start` script, which launches this service:
+Install the [AWS EB CLI](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html), configure AWS credentials with permission to create Elastic Beanstalk resources, then run these commands from the repository root. Elastic Beanstalk detects the root `package.json` and runs its `start` script, which launches this service. The committed [`.elasticbeanstalk/config.yml`](../.elasticbeanstalk/config.yml) binds application `image-filter-service`, environment `image-filter-env`, region `us-east-1`, and the `main` branch:
 
 ```bash
 cd <repository-root>
 npm ci
-eb init
+eb init image-filter-service --region us-east-1 --platform "Node.js 22 running on 64bit Amazon Linux 2023"
 ```
 
-At the `eb init` prompts, select the AWS region, create or select an application, and choose the **Node.js** platform. Then create an environment and deploy:
+Create the environment when it does not exist, deploy the application, and inspect its status:
 
 ```bash
 eb create image-filter-env
 eb deploy
+eb status
 ```
 
 The verified deployment runs in the `image-filter-env` environment in `us-east-1`. The verified reviewer test endpoint is:
@@ -66,5 +67,7 @@ The verified deployment runs in the `image-filter-env` environment in `us-east-1
 ```text
 http://image-filter-env.eba-yy83tzhg.us-east-1.elasticbeanstalk.com/filteredimage?image_url=https://upload.wikimedia.org/wikipedia/commons/b/bd/Golden_tabby_and_white_kitten_n01.jpg
 ```
+
+The environment can be monitored and managed in the [Elastic Beanstalk Console Dashboard](https://console.aws.amazon.com/elasticbeanstalk/home?region=us-east-1#/environment/dashboard?environmentId=e-fmpypz3fft).
 
 Elastic Beanstalk supplies `PORT`; `server.js` uses it automatically.

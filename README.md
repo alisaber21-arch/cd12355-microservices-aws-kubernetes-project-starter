@@ -11,6 +11,19 @@ The verified reviewer test endpoint is:
 http://image-filter-env.eba-yy83tzhg.us-east-1.elasticbeanstalk.com/filteredimage?image_url=https://upload.wikimedia.org/wikipedia/commons/b/bd/Golden_tabby_and_white_kitten_n01.jpg
 ```
 
+### Elastic Beanstalk CLI and Console Dashboard
+
+The Image Filter service is deployed through the Elastic Beanstalk CLI as application `image-filter-service`, environment `image-filter-env`, in `us-east-1`. The checked-in [`.elasticbeanstalk/config.yml`](.elasticbeanstalk/config.yml) binds `main` to that environment so a clone can run `eb deploy` after AWS credentials are configured.
+
+```bash
+eb init image-filter-service --region us-east-1 --platform "Node.js 22 running on 64bit Amazon Linux 2023"
+eb create image-filter-env
+eb deploy
+eb status
+```
+
+Manage the deployed environment in the [Elastic Beanstalk Console Dashboard](https://console.aws.amazon.com/elasticbeanstalk/home?region=us-east-1#/environment/dashboard?environmentId=e-fmpypz3fft).
+
 For this project, you are a DevOps engineer who will be collaborating with a team that is building an API for business analysts. The API provides business analysts basic analytics data on user activity in the service. The application they provide you functions as expected locally and you are expected to help build a pipeline to deploy it in Kubernetes.
 
 ## Getting Started
