@@ -4,7 +4,7 @@ This self-contained Node.js service exposes `GET /filteredimage?image_url=...`. 
 
 ## Local use
 
-Requirements: Node.js 18 or newer and npm.
+Requirements: Node.js 22 or newer and npm.
 
 From the repository root (the recommended command for deployment validation):
 
