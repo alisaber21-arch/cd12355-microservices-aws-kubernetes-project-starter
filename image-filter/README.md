@@ -61,10 +61,10 @@ eb create image-filter-env
 eb deploy
 ```
 
-Obtain the running endpoint with `eb status` or `eb open`. Record the deployed endpoint here before submission:
+The verified deployment runs in the `image-filter-env` environment in `us-east-1`. Its endpoint is:
 
 ```text
-Deployment URL: https://<your-elastic-beanstalk-environment-url>/filteredimage?image_url=<public-image-url>
+http://image-filter-env.eba-yy83tzhg.us-east-1.elasticbeanstalk.com/filteredimage?image_url=<url-encoded-public-image-url>
 ```
 
 Elastic Beanstalk supplies `PORT`; `server.js` uses it automatically.
