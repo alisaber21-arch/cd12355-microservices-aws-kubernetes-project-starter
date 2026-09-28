@@ -1,6 +1,10 @@
 # Coworking Space Service Extension
 The Coworking Space Service is a set of APIs that enables users to request one-time tokens and administrators to authorize access to a coworking space. This service follows a microservice pattern and the APIs are split into distinct services that can be deployed and managed independently of one another.
 
+## Image Filter Service
+
+The completed Udacity Image Filter Node.js project is available in [`image-filter/`](image-filter/), including local run instructions and Elastic Beanstalk deployment steps.
+
 For this project, you are a DevOps engineer who will be collaborating with a team that is building an API for business analysts. The API provides business analysts basic analytics data on user activity in the service. The application they provide you functions as expected locally and you are expected to help build a pipeline to deploy it in Kubernetes.
 
 ## Getting Started
