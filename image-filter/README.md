@@ -6,6 +6,15 @@ This self-contained Node.js service exposes `GET /filteredimage?image_url=...`. 
 
 Requirements: Node.js 18 or newer and npm.
 
+From the repository root (the recommended command for deployment validation):
+
+```bash
+npm ci
+npm start
+```
+
+Or run the service independently from this directory:
+
 ```bash
 cd image-filter
 npm install
@@ -37,11 +46,11 @@ The endpoint returns:
 
 ## Deploying to Elastic Beanstalk
 
-Install the [AWS EB CLI](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html), configure AWS credentials with permission to create Elastic Beanstalk resources, then run these commands from the `image-filter/` directory:
+Install the [AWS EB CLI](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html), configure AWS credentials with permission to create Elastic Beanstalk resources, then run these commands from the repository root. Elastic Beanstalk detects the root `package.json` and runs its `start` script, which launches this service:
 
 ```bash
-cd image-filter
-npm install
+cd <repository-root>
+npm ci
 eb init
 ```
 

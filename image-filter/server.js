@@ -17,6 +17,13 @@ function validateImageUrl(value) {
   }
 }
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    service: "Udacity Image Filter",
+    endpoint: "GET /filteredimage?image_url=<http-or-https-image-url>"
+  });
+});
+
 app.get("/filteredimage", async (req, res) => {
   const imageUrl = validateImageUrl(req.query.image_url);
 
