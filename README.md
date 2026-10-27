@@ -152,3 +152,61 @@ Please provide up to 3 sentences for each suggestion. Additional content in your
 ### Best Practices
 * Dockerfile uses an appropriate base image for the application being deployed. Complex commands in the Dockerfile include a comment describing what it is doing.
 * The Docker images use semantic versioning with three numbers separated by dots, e.g. `1.2.1` and  versioning is visible in the  screenshot. See [Semantic Versioning](https://semver.org/) for more details.
+
+## Coworking Space: build, deploy and evidence
+
+Manifests live in `deployments/` (`postgres.yaml`, `configmap.yaml`, `secret.yaml`, `coworking.yaml`); the Dockerfile is `analytics/Dockerfile`; the pipeline is `buildspec.yaml`. No credentials are committed: `deployments/secret.yaml` holds a placeholder only.
+
+### One immutable tag end to end
+CodeBuild tags the image with the first 12 characters of the source commit SHA (`CODEBUILD_RESOLVED_SOURCE_VERSION`) and pushes `<ecr-repo-uri>:<sha>`. It then runs `envsubst` on `deployments/coworking.yaml`, replacing `${ECR_IMAGE_URI}` and `${IMAGE_TAG}`, and publishes `rendered/coworking.yaml` and `imageDetail.json` as build artifacts. The same SHA appears in the CodeBuild log, the ECR tag, the pod image/`image-tag` label and `IMAGE_TAG` env var. Never apply `deployments/coworking.yaml` directly; apply the rendered file.
+
+Make the ECR repository immutable (once):
+```bash
+aws ecr create-repository --repository-name coworking --image-tag-mutability IMMUTABLE --region <aws-region>
+```
+
+### CodeBuild setup (once)
+Source: this GitHub repo; environment `aws/codebuild/standard:7.0`, privileged mode; buildspec `buildspec.yaml`; env vars `ECR_REPOSITORY_URI`, `AWS_DEFAULT_REGION`. Enable the webhook under Primary source webhook events, event type `PUSH`, so every push to `main` triggers a build. The service role needs `ecr:GetAuthorizationToken` and, on the repo, `ecr:BatchCheckLayerAvailability`, `ecr:InitiateLayerUpload`, `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`, `ecr:PutImage`, `ecr:DescribeImages`.
+
+### Deploy
+```bash
+aws eks update-kubeconfig --name <cluster-name> --region <aws-region>
+# Create the DB secret without writing the password to a file
+kubectl create secret generic coworking-db-credentials --from-literal=DB_PASSWORD='<strong-password>' --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f deployments/postgres.yaml -f deployments/configmap.yaml
+kubectl rollout status deployment/postgres
+kubectl port-forward svc/postgres 5432:5432 &
+for f in db/1_create_tables.sql db/2_seed_users.sql db/3_seed_tokens.sql; do PGPASSWORD='<strong-password>' psql -h 127.0.0.1 -U postgres -d postgres -p 5432 < $f; done
+
+# Render the Deployment locally (or download rendered/coworking.yaml from the CodeBuild artifact)
+export IMAGE_TAG=<commit-sha-12>
+export ECR_IMAGE_URI=<account-id>.dkr.ecr.<aws-region>.amazonaws.com/coworking:$IMAGE_TAG
+envsubst '${ECR_IMAGE_URI} ${IMAGE_TAG}' < deployments/coworking.yaml > rendered-coworking.yaml
+kubectl apply -f rendered-coworking.yaml
+kubectl rollout status deployment/coworking
+```
+EKS nodes need ECR pull permission (the default node role includes `AmazonEC2ContainerRegistryReadOnly`).
+
+### Required screenshots and the command for each
+| Rubric item | Capture |
+|---|---|
+| ECR image list | ECR console > `coworking` > Images (tag = commit SHA), or `aws ecr describe-images --repository-name coworking --region <aws-region>` |
+| Auto-triggered CodeBuild | Push a commit to `main`; screenshot Build history showing source version = the commit SHA, trigger = webhook, status Succeeded, plus the ECR image with the same tag |
+| Functional YAML | `kubectl get deployment coworking -o jsonpath='{.spec.template.spec.containers[0].image}'` shows the real ECR URI |
+| Service, deployment, pod | `kubectl get svc`, `kubectl get deployments`, `kubectl get pods`, `kubectl describe deployment coworking` |
+| PostgreSQL service | `kubectl describe svc postgres` |
+| CloudWatch logs | CloudWatch > Log groups > `/aws/containerinsights/<cluster-name>/application` > the coworking stream showing `GET /health_check ... 200` / `GET /readiness_check ... 200`; or `aws logs tail /aws/containerinsights/<cluster-name>/application --since 1h --region <aws-region>` |
+
+Verify the app: `curl http://<coworking-loadbalancer-host>:5153/api/reports/daily_usage`.
+To confirm traceability, `kubectl get pods -l service=coworking -L image-tag` should show the SHA from the CodeBuild build.
+
+### Container Insights logging
+Install the `amazon-cloudwatch-observability` EKS add-on (installs CloudWatch agent and Fluent Bit) and attach `CloudWatchAgentServerPolicy` to the node role or a pod-identity role:
+```bash
+aws iam attach-role-policy --role-name <node-or-pod-identity-role> --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+aws eks create-addon --cluster-name <cluster-name> --addon-name amazon-cloudwatch-observability --region <aws-region>
+kubectl get pods -n amazon-cloudwatch
+```
+
+### Resources, node type and cost
+Coworking requests 100m CPU/128Mi (limits 250m/256Mi); PostgreSQL requests 250m/256Mi (limits 500m/512Mi). `t3.medium` nodes fit this plus system and observability pods. Save cost with right-sized requests, autoscaling idle nodes, and ECR lifecycle and CloudWatch retention policies.
