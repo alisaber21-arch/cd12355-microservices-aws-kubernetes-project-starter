@@ -166,7 +166,9 @@ aws ecr create-repository --repository-name coworking --image-tag-mutability IMM
 ```
 
 ### CodeBuild setup (once)
-Source: this GitHub repo; environment `aws/codebuild/standard:7.0`, privileged mode; buildspec `buildspec.yaml`; env vars `ECR_REPOSITORY_URI`, `AWS_DEFAULT_REGION`. Enable the webhook under Primary source webhook events, event type `PUSH`, so every push to `main` triggers a build. The service role needs `ecr:GetAuthorizationToken` and, on the repo, `ecr:BatchCheckLayerAvailability`, `ecr:InitiateLayerUpload`, `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`, `ecr:PutImage`, `ecr:DescribeImages`.
+Source: this GitHub repo; environment `aws/codebuild/standard:7.0`, privileged mode; buildspec `buildspec.yaml`; env vars `ECR_REPOSITORY_URI`, `AWS_DEFAULT_REGION`. Enable the webhook under Primary source webhook events, event type `PUSH`, so every push to `main` triggers a build. The service role needs `ecr:GetAuthorizationToken` and, on the repo, `ecr:BatchCheckLayerAvailability`, `ecr:InitiateLayerUpload`, `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`, `ecr:PutImage`, `ecr:DescribeImages`. In the Udacity lab, attach `AmazonEC2ContainerRegistryPowerUser` to the CodeBuild service role (or use `LabRole`).
+
+The ECR repository is immutable, so each commit SHA tag is pushed once; the buildspec skips the push if the tag already exists. If `envsubst` is missing (for example in CloudShell), render the Deployment with `sed -e 's|${ECR_IMAGE_URI}|<uri>:<tag>|g' -e 's|${IMAGE_TAG}|<tag>|g' deployments/coworking.yaml > rendered/coworking.yaml`.
 
 ### Deploy
 ```bash
