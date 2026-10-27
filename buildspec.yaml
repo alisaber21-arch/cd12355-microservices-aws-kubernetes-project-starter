@@ -1,0 +1,38 @@
+version: 0.2
+
+# Required CodeBuild environment variables (plaintext, no secrets):
+#   ECR_REPOSITORY_URI  e.g. <account-id>.dkr.ecr.<region>.amazonaws.com/coworking
+#   AWS_DEFAULT_REGION  e.g. us-east-1
+# The image tag is the source commit SHA, so the same tag is traceable through
+# CodeBuild -> ECR -> Kubernetes -> CloudWatch.
+
+phases:
+  pre_build:
+    commands:
+      - export ECR_REGISTRY="${ECR_REPOSITORY_URI%%/*}"
+      - export IMAGE_TAG="$(echo "$CODEBUILD_RESOLVED_SOURCE_VERSION" | cut -c1-12)"
+      - export ECR_IMAGE_URI="$ECR_REPOSITORY_URI:$IMAGE_TAG"
+      - echo "Building $ECR_IMAGE_URI"
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+  build:
+    commands:
+      - docker build --tag "$ECR_IMAGE_URI" --file analytics/Dockerfile analytics
+  post_build:
+    commands:
+      # Skip the push if this commit's tag already exists (immutable repos reject overwrites).
+      - |
+        if aws ecr describe-images --repository-name "${ECR_REPOSITORY_URI#*/}" --image-ids imageTag="$IMAGE_TAG" --region "$AWS_DEFAULT_REGION" >/dev/null 2>&1; then
+          echo "Tag $IMAGE_TAG already in ECR; skipping push"
+        else
+          docker push "$ECR_IMAGE_URI"
+        fi
+      # Replace the ${ECR_IMAGE_URI} / ${IMAGE_TAG} placeholders in the Deployment with the real image.
+      - mkdir -p rendered
+      - envsubst '${ECR_IMAGE_URI} ${IMAGE_TAG}' < deployments/coworking.yaml > rendered/coworking.yaml
+      - grep -n "image:" rendered/coworking.yaml
+      - printf '{"imageUri":"%s","imageTag":"%s"}\n' "$ECR_IMAGE_URI" "$IMAGE_TAG" > imageDetail.json
+
+artifacts:
+  files:
+    - imageDetail.json
+    - rendered/coworking.yaml
