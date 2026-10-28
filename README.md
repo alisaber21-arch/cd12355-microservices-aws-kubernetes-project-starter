@@ -212,3 +212,5 @@ kubectl get pods -n amazon-cloudwatch
 
 ### Resources, node type and cost
 Coworking requests 100m CPU/128Mi (limits 250m/256Mi); PostgreSQL requests 250m/256Mi (limits 500m/512Mi). `t3.medium` nodes fit this plus system and observability pods. Save cost with right-sized requests, autoscaling idle nodes, and ECR lifecycle and CloudWatch retention policies.
+
+The pipeline is triggered by every push to `main`; each push builds and pushes an image tagged with that commit's 12-character SHA.
